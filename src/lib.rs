@@ -1,30 +1,33 @@
-use atty::Stream;
 use std::error::Error;
-use std::io::{stdin, BufRead, Stdin};
-use std::{fs, io};
+use std::fs;
+use std::io::{self, BufRead};
 
 pub struct Config {
     pub query: String,
     pub path: String,
+    content: Option<String>,
 }
 
 impl Config {
-    pub fn build(args: Box<[String]>) -> Result<Config, &'static str> {
-        if args.len() < 3 {
+    pub fn build(args: Vec<String>, content: Option<String>) -> Result<Config, &'static str> {
+        if args.len() < 3 && content == None{
             return Err("Not enough arguments.");
         }
 
         Ok(Config {
             query: args[1].clone(),
             path: args[2].clone(),
+            content,
         })
     }
 }
 
-pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let content = fs::read_to_string(config.path)?;
+pub fn run(mut config: Config) -> Result<(), Box<dyn Error>> {
+    if let None = config.content {
+        config.content = Some(fs::read_to_string(config.path)?);
+    }
 
-    for line in search(&config.query, &content) {
+    for line in search(&config.query, &config.content.unwrap()) {
         println!("{line}");
     }
 
@@ -43,21 +46,23 @@ pub fn search<'a>(query: &str, content: &'a str) -> Vec<&'a str> {
     results
 }
 
-pub fn get_piped() -> io::Result<String> {
-    let stdin = io::stdin();
-    let mut stdin = stdin.lock(); // locking is optional
+pub fn get_piped() -> String {
+    let mut input = String::new();
 
-    let mut line = String::new();
+    loop {
+        let stdin = io::stdin();
+        let mut handle = stdin.lock();
 
-    // Could also `match` on the `Result` if you wanted to handle `Err`
-    while let Ok(n_bytes) = stdin.read_line(&mut line) {
-        if n_bytes == 0 {
-            break;
+        if atty::is(atty::Stream::Stdin) {
+            return input;
         }
-        println!("{}", line);
-        line.clear();
+
+        if let Ok(n) = handle.read_line(&mut input) {
+            if n == 0 {
+                return input;
+            }
+        }
     }
-    Ok(line)
 }
 
 #[cfg(test)]
@@ -72,7 +77,7 @@ mod tests {
             String::from("path"),
         ];
 
-        let config = Config::build(Box::from(args.clone())).unwrap();
+        let config = Config::build(args.clone(), None).unwrap();
 
         assert_eq!(config.query, args[1]);
         assert_eq!(config.path, args[2]);
@@ -83,7 +88,7 @@ mod tests {
             String::from("243rewfdd"),
         ];
 
-        let config = Config::build(Box::from(args.clone())).unwrap();
+        let config = Config::build(args.clone(), None).unwrap();
 
         assert_eq!(config.query, args[1]);
         assert_eq!(config.path, args[2]);
@@ -93,7 +98,7 @@ mod tests {
     fn config_build_not_enough_args() {
         let args = vec![String::from("target/debug/rust_grep")];
 
-        let config = Config::build(Box::from(args));
+        let config = Config::build(args, None);
 
         assert!(config.is_err());
 
@@ -102,7 +107,7 @@ mod tests {
             String::from("query"),
         ];
 
-        let config = Config::build(Box::from(args));
+        let config = Config::build(args, None);
 
         assert!(config.is_err());
     }

@@ -13,11 +13,7 @@ fn main() {
             process::exit(1);
         });
     } else {
-        config = Config::build(
-            Vec::from([String::new(), args[1].clone(), String::new()]),
-            Some(stdin),
-        )
-        .unwrap_or_else(|err| {
+        config = Config::build(args, Some(stdin)).unwrap_or_else(|err| {
             println!("Problem parsing arguments: {err}");
             process::exit(1);
         });

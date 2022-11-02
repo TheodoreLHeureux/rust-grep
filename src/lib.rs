@@ -10,13 +10,19 @@ pub struct Config {
 
 impl Config {
     pub fn build(args: Vec<String>, content: Option<String>) -> Result<Config, &'static str> {
-        if args.len() < 3 && content == None{
+        if (args.len() < 3 && content == None) || args.len() < 2 {
             return Err("Not enough arguments.");
+        }
+
+        let mut path = String::new();
+
+        if args.len() > 2 {
+            path = args[2].clone();
         }
 
         Ok(Config {
             query: args[1].clone(),
-            path: args[2].clone(),
+            path,
             content,
         })
     }

@@ -1,7 +1,6 @@
-use std::{env, process};
 use std::error::Error;
-use std::fs;
 use std::io::{self, BufRead};
+use std::{env, fs, process};
 
 pub struct Config {
     pub query: String,
@@ -11,16 +10,28 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn build(mut args: Vec<String>, content: Option<String>) -> Result<Config, &'static str> {
+    pub fn build(
+        mut args: Vec<String>,
+        content: Option<String>,
+    ) -> Result<Config, &'static str> {
         let params = extract_params(&mut args);
+        let mut ignore_case = env::var("IGNORE_CASE").is_ok();
 
-        if params.contains(&"--help".to_string()) || params.contains(&"-h".to_string()) {
-
-            println!("Usage: rust-grep [OPTION] [QUERY] [FILE]");
-        
-            process::exit(1);
+        for p in params {
+            match &*p {
+                "--help" | "-h" => {
+                    println!("Usage: rust-grep [OPTION] [QUERY] [FILE]");
+                    process::exit(1);
+                }
+                "--ignore_case" | "-ic" => {
+                    ignore_case = true;
+                }
+                _ => {
+                    println!("Invalid argument at: {}", p);
+                    process::exit(1);
+                }
+            }
         }
-
         if (args.len() < 3 && content == None) || args.len() < 2 {
             return Err("Not enough arguments.");
         }
@@ -30,8 +41,6 @@ impl Config {
         if args.len() > 2 {
             path = args[2].clone();
         }
-
-        let ignore_case = env::var("IGNORE_CASE").is_ok();
 
         Ok(Config {
             query: args[1].clone(),
@@ -95,7 +104,10 @@ pub fn search<'a>(query: &str, content: &'a str) -> Vec<&'a str> {
     results
 }
 
-pub fn search_case_insensitive<'a>(query: &str, content: &'a str) -> Vec<&'a str> {
+pub fn search_case_insensitive<'a>(
+    query: &str,
+    content: &'a str,
+) -> Vec<&'a str> {
     let mut results = Vec::new();
 
     for line in content.lines() {

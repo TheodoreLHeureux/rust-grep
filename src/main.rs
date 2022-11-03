@@ -9,12 +9,12 @@ fn main() {
 
     if stdin.is_empty() {
         config = Config::build(args, None).unwrap_or_else(|err| {
-            println!("Problem parsing arguments: {err}");
+            eprintln!("Problem parsing arguments: {err}");
             process::exit(1);
         });
     } else {
         config = Config::build(args, Some(stdin)).unwrap_or_else(|err| {
-            println!("Problem parsing arguments: {err}");
+            eprintln!("Problem parsing arguments: {err}");
             process::exit(1);
         });
     }

@@ -1,37 +1,23 @@
-use std::{env, process};
+pub use parameters::Parameters;
+
+pub mod parameters;
 
 pub struct Config {
     pub query: String,
     pub path: String,
     pub content: Option<String>,
-    pub ignore_case: bool,
+    pub params: Parameters,
 }
 
 impl Config {
     pub fn build(
         mut args: Vec<String>,
         content: Option<String>,
-    ) -> Result<Config, &'static str> {
-        let params = extract_params(&mut args);
-        let mut ignore_case = env::var("IGNORE_CASE").is_ok();
+    ) -> Result<Config, String> {
+        let params = Parameters::build(&mut args)?;
 
-        for p in params {
-            match &*p {
-                "--help" | "-h" => {
-                    println!("Usage: rust-grep [OPTION] [QUERY] [FILE]");
-                    process::exit(1);
-                }
-                "--ignore_case" | "-ic" => {
-                    ignore_case = true;
-                }
-                _ => {
-                    println!("Invalid argument at: {}", p);
-                    process::exit(1);
-                }
-            }
-        }
         if (args.len() < 3 && content == None) || args.len() < 2 {
-            return Err("Not enough arguments.");
+            return Err("Not enough arguments.".to_string());
         }
 
         let mut path = String::new();
@@ -44,27 +30,9 @@ impl Config {
             query: args[1].clone(),
             path,
             content,
-            ignore_case,
+            params,
         })
     }
-}
-
-pub fn extract_params(args: &mut Vec<String>) -> Vec<String> {
-    let mut params = Vec::new();
-    let mut indices: Vec<usize> = Vec::new();
-
-    for i in 0..args.len() {
-        if args[i].starts_with('-') {
-            indices.push(i);
-            params.push(args[i].clone());
-        }
-    }
-
-    for i in indices {
-        args.remove(i);
-    }
-
-    params
 }
 
 #[cfg(test)]

@@ -16,7 +16,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
     let result: Vec<&str>;
 
-    if config.ignore_case {
+    if config.params.ignore_case {
         result = search_case_insensitive(&config.query, &content)
     } else {
         result = search(&config.query, &content);

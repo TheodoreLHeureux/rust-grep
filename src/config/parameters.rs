@@ -11,6 +11,14 @@ impl Parameters {
 
         for p in params {
             match &*p {
+                "--version" | "-v" => {
+                    println!(
+                        "{} ({})",
+                        env!("CARGO_PKG_NAME"),
+                        env!("CARGO_PKG_VERSION"),
+                    );
+                    process::exit(0);
+                }
                 "--help" | "-h" => {
                     println!("Usage: rust-grep [OPTION] [QUERY] [FILE]");
                     process::exit(0);

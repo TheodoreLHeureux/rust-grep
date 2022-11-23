@@ -3,7 +3,7 @@ use std::env;
 use std::process;
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let args  = env::args();
     let stdin = rust_grep::get_piped();
     let config: Config;
 

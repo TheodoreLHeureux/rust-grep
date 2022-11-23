@@ -11,10 +11,11 @@ pub struct Config {
 
 impl Config {
     pub fn build(
-        mut args: Vec<String>,
+        mut args_iter: impl Iterator<Item = String>,
         content: Option<String>,
     ) -> Result<Config, String> {
-        let params = Parameters::build(&mut args)?;
+        let mut args: Vec<String> = Vec::new();
+        let params = Parameters::build(&mut args_iter, &mut args)?;
 
         if (args.len() < 3 && content == None) || args.len() < 2 {
             return Err("Not enough arguments.".to_string());
@@ -46,9 +47,10 @@ mod tests {
             String::from("target/debug/rust_grep"),
             String::from("query"),
             String::from("path"),
+            String::from("-ic"),
         ];
 
-        let config = Config::build(args.clone(), None).unwrap();
+        let config = Config::build(args.clone().into_iter(), None).unwrap();
 
         assert_eq!(config.query, args[1]);
         assert_eq!(config.path, args[2]);
@@ -59,7 +61,7 @@ mod tests {
             String::from("243rewfdd"),
         ];
 
-        let config = Config::build(args.clone(), None).unwrap();
+        let config = Config::build(args.clone().into_iter(), None).unwrap();
 
         assert_eq!(config.query, args[1]);
         assert_eq!(config.path, args[2]);
@@ -69,7 +71,7 @@ mod tests {
     fn config_build_not_enough_args() {
         let args = vec![String::from("target/debug/rust_grep")];
 
-        let config = Config::build(args, None);
+        let config = Config::build(args.into_iter(), None);
 
         assert!(config.is_err());
 
@@ -78,7 +80,7 @@ mod tests {
             String::from("query"),
         ];
 
-        let config = Config::build(args, None);
+        let config = Config::build(args.into_iter(), None);
 
         assert!(config.is_err());
     }

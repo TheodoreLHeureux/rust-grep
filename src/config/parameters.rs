@@ -5,18 +5,25 @@ pub struct Parameters {
 }
 
 impl Parameters {
-    pub fn build(args: &mut Vec<String>) -> Result<Parameters, String> {
-        let params = extract_params(args);
+    pub fn build(
+        args_iterator: &mut impl Iterator<Item = String>,
+        args: &mut Vec<String>,
+    ) -> Result<Parameters, String> {
+        let mut params: Vec<String> = Vec::new();
         let mut ignore_case = env::var("IGNORE_CASE").is_ok();
+
+        while let Some(arg) = args_iterator.next() {
+            if arg.starts_with("-") {
+                params.push(arg);
+            } else {
+                args.push(arg);
+            }
+        }
 
         for p in params {
             match &*p {
                 "--version" | "-v" => {
-                    println!(
-                        "{} ({})",
-                        env!("CARGO_PKG_NAME"),
-                        env!("CARGO_PKG_VERSION"),
-                    );
+                    println!("{} ({})", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"),);
                     process::exit(0);
                 }
                 "--help" | "-h" => {
@@ -34,22 +41,4 @@ impl Parameters {
 
         Ok(Parameters { ignore_case })
     }
-}
-
-pub fn extract_params(args: &mut Vec<String>) -> Vec<String> {
-    let mut params = Vec::new();
-    let mut indices: Vec<usize> = Vec::new();
-
-    for i in 0..args.len() {
-        if args[i].starts_with('-') {
-            indices.push(i);
-            params.push(args[i].clone());
-        }
-    }
-
-    for i in indices {
-        args.remove(i);
-    }
-
-    params
 }
